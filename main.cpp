@@ -143,14 +143,17 @@ void mouseClick (GLFWwindow *sender, int button, int action, int mods) {
 			canMove = true;
 		}
 		if (button == GLFW_MOUSE_BUTTON_RIGHT){
-			if (controls.size() - 1 > (order - 2)){
+			int ptsCheck = controls.size() - 1;
+			int ordCheck = order - 2;
+			if ((ptsCheck > ordCheck) && (ptsCheck > 0)){
 				if (selected != -1){
 					controls.erase(controls.begin() + selected);
 					cout << "Deleted control point: " << selected << endl;
 				}
 			}
-			else
+			else {
 				cout << "There are too few control points for the current order of the curve." << endl;
+			}
 		}
 		if (button == GLFW_MOUSE_BUTTON_MIDDLE) {
 			if (selected != -1){
