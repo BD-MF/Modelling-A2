@@ -37,7 +37,7 @@ vec2 findPosAt(float u){
 
 	//efficient algorithm follows:
 	for (int i = 0; i < order; i++){
-		output.push_back(controls[delta - i]);
+		output.push_back(controls[delta - i]);	
 	}
 	for (int r = order; r >= 2; r--){
 		int i = delta;
@@ -80,7 +80,7 @@ void render () {
 	}
 
 	glBegin (GL_LINE_STRIP);
-	for(float u = knots[order-1]; u < uParam; u += 0.01){
+	for(float u = knots[order-1]; u < uParam; u += (0.001)){
 		vec2 posVec = findPosAt(u);
 		glVertex2f(posVec.x, posVec.y);
 	}
@@ -139,7 +139,7 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 			cout << "The order of the curve must be bigger than 0." << endl;
 		}
 	}
-	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
+	if (key == GLFW_KEY_RIGHT){
 		if (uParam < knots[controls.size() + 1]){
 			uParam += 0.05;
 		}
@@ -147,7 +147,7 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 			cout << "Highest u value reached." << endl;
 		}
 	}
-	else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
+	else if (key == GLFW_KEY_LEFT){
 		if (uParam > knots[order - 1]){
 			uParam -= 0.05;
 		}
