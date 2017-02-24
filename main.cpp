@@ -15,13 +15,40 @@ GLFWwindow *window;
 int w, h;
 double mouseX, mouseY;
 
-vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f)};
+vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f)};
 float cRadius = 0.01f;
 int selected = -1;
 
-vector<float> knots = {0.f, 0.f, 1.f, 1.f};
-int order = 2;
-int uParam = 0;
+vector<float> knots = {0.f, 0.f, 0.f, 0.25f, 0.5f, 0.75f, 1.f, 1.f, 1.f};
+int order = 3;
+float uParam = knots[order - 1];
+
+vec2 findPosAt(float u){
+	vector<vec2> output;
+	//find the delta value
+	int delta = -1;
+	for (int i = 0; i < (controls.size() + order); i++){
+		if ((u >= knots[i]) && (u < knots[i+1])){
+			delta = i;
+			break;
+		}
+	}
+	assert(delta != -1);
+
+	//efficient algorithm follows:
+	for (int i = 0; i < order; i++){
+		output.push_back(controls[delta - i]);
+	}
+	for (int r = order; r >= 2; r--){
+		int i = delta;
+		for (int s = 0; s <= r - 2; s++){
+			float omega = (u - knots[i]) / (knots[i+r-1] - knots[i]);
+			output[s] = (omega * output[s]) + ((1 - omega) * output[s+1]);
+			i--;
+		}
+	}
+	return output[0];
+}
 
 void render () {
 	glEnable (GL_DEPTH_TEST);
@@ -51,6 +78,13 @@ void render () {
 			}
 		glEnd ();
 	}
+
+	glBegin (GL_LINE_STRIP);
+	for(float u = knots[order-1]; u < uParam; u += 0.01){
+		vec2 posVec = findPosAt(u);
+		glVertex2f(posVec.x, posVec.y);
+	}
+	glEnd();
 }
 
 void buildKnots(){
@@ -106,18 +140,25 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 		}
 	}
 	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
-		if (uParam < 1.f){
-			uParam++;
+		if (uParam < knots[controls.size() + 1]){
+			uParam += 0.05;
+		}
+		else {
+			cout << "Highest u value reached." << endl;
 		}
 	}
 	else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
-		if (uParam > 0.f){
-			uParam--;
+		if (uParam > knots[order - 1]){
+			uParam -= 0.05;
+		}
+		else {
+			cout << "Lowest u value reached." << endl;
 		}
 	}
 	if (key == GLFW_KEY_ENTER && action == GLFW_PRESS){
 			cout << "Order: " << order << endl;
 			cout << "Number of Points: " << controls.size() << endl;
+			cout << "u Value: " << uParam << endl;
 	}
 }
 
