@@ -137,11 +137,12 @@ void buildKnots(){
 		knots.erase(knots.begin() + (numPoints + 1));
 	}
 
-	//prints out the knot values
+	/*prints out the knot values
 	for (int iter = 0; iter < knots.size(); iter++){
 		cout << knots[iter] << " ";
 	}
 	cout << endl;
+	*/
 }
 
 void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) {
@@ -172,20 +173,26 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
 		if (uParam < knots[controls.size() + 1]){
 			uParam += 0.05;
+			if (uParam > 1.f){
+				uParam = 1.f;
+			}
 		}
 		else {
 			cout << "Highest u value reached." << endl;
 		}
-		cout << uParam << endl;
+		//cout << uParam << endl;
 	}
 	else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
 		if (uParam > knots[order - 1]){
 			uParam -= 0.05;
+			if (uParam < 0.f){
+				uParam = 0.f;
+			}
 		}
 		else {
 			cout << "Lowest u value reached." << endl;
 		}
-		cout << uParam << endl;
+		//cout << uParam << endl;
 	}
 	if (key == GLFW_KEY_ENTER && action == GLFW_PRESS){
 			cout << "Order: " << order << endl;
