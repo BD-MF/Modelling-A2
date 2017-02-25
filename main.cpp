@@ -15,36 +15,42 @@ GLFWwindow *window;
 int w, h;
 double mouseX, mouseY;
 
-vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.25f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f), vec2(0.5f, 0.2f)};
+vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.25f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f),
+						vec2(0.f, 0.f)}; //null point to fix the curve-tail bug
 float cRadius = 0.01f;
 int selected = -1;
 
 vector<float> knots = {0.f, 0.f, 0.f, 0.25f, 0.5f, 0.75f, 1.f, 1.f, 1.f};
 int order = 3;
-float uParam = knots[order - 1];
+float uParam = 0.f;
+
+float getDelta(float u){
+
+}
 
 vec2 findPosAt(float u){
 	vector<vec2> output;
+
 	//find the delta value
 	int delta = -1;
-	for (int i = 0; i < (controls.size() + order); i++){
-		if ((u >= knots[i]) && (u < knots[i+1])){
-			delta = i;
-			break;
-		}
-		else if (u >= 1.f){
-			delta = controls.size();
+	for (int i = 0; i < (controls.size() - 1 + order); i++){
+		if (u >= 1.f){
+			delta = controls.size() - 1;
 			u = 1.f;
 		}
 		else if (u < 0.f){
 			delta = order;
 			u = 0.f;
 		}
+		else if ((u >= knots[i]) && (u < knots[i+1])){
+			delta = i;
+			break;
+		}
 	}
 	assert(delta != -1);
 
 	//efficient algorithm follows:
-	for (int i = 0; i < order; i++){
+	for (int i = 0; i <= order - 1; i++){
 		output.push_back(controls[delta - i]);
 	}
 	for (int r = order; r >= 2; r--){
@@ -77,7 +83,7 @@ void render () {
 	//glFrustum
 
 	//Draws the points as little circles
-	for (int i = 0; i < controls.size(); i++){
+	for (int i = 0; i < controls.size() - 1; i++){
 		glBegin (GL_TRIANGLE_STRIP); //GL_LINE_STRIP, GL_POINTS, GL_QUADS, etc...
 			glColor3f(1.f, 1.f, 1.f);
 			for (float t = 0.f; t < 2*PI; t += 0.01f){
@@ -90,7 +96,7 @@ void render () {
 
 	glBegin (GL_LINE_STRIP);
 	glColor3f(1.f, 1.f, 1.f);
-	for(float u = knots[order - 1]; u <= knots[controls.size() + 1]; u += (0.001)){
+	for(float u = knots[order - 1]; u <= knots[controls.size()]; u += (0.001)){
 		vec2 posVec = findPosAt(u);
 		glVertex2f(posVec.x, posVec.y);
 	}
@@ -114,26 +120,26 @@ void render () {
 				glVertex2f(knotPos.x + circle.x, knotPos.y + circle.y);
 				glVertex2f(knotPos.x, knotPos.y);
 			}
-		glEnd ();
+		glEnd();
 	}
 }
 
 void buildKnots(){
-	int numPoints = controls.size();
+	int numPoints = controls.size() - 1;
 	/*	the denominator for the uniform step size is (numPoints - order + 2).
 		if numPoints < order - 1 , then step size will be negative or have denominator 0.
 		to avoid this we assert that numPoints > order - 2 */
 	assert(numPoints > (order - 2));
 
 	//add knots from current m and k values
-	float stepSize = 1.f / float(numPoints - order + 2);
+	float stepSize = 1.f / float(numPoints - order + 1);
 	for (int iter = order; iter <= numPoints; iter++){
-		float value = knots[iter-1] + stepSize;
+		float value = knots[iter - 1] + stepSize;
 		knots.insert(knots.begin() + iter, value);
 	}
 
 	//delete knots from previous knot sequence
-	while (knots.size() > (numPoints + order + 1)){
+	while (knots.size() > (numPoints + order)){
 		knots.erase(knots.begin() + (numPoints + 1));
 	}
 
@@ -148,7 +154,7 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 	if (key == GLFW_KEY_UP && action == GLFW_PRESS){
-		if (controls.size() > (order - 2) + 1){
+		if (controls.size() - 1 > (order - 2) + 1){
 			order++;
 			knots.insert(knots.begin(), 0.f);
 			knots.push_back(1.f);
@@ -170,26 +176,32 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 		}
 	}
 	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
-		if (uParam < knots[controls.size() + 1]){
+		if (uParam < knots[controls.size() - 1 + 1]){
 			uParam += 0.05;
+			if (uParam > 1.f){
+				uParam = 1.f;
+			}
 		}
 		else {
 			cout << "Highest u value reached." << endl;
 		}
-		cout << uParam << endl;
+		//cout << uParam << endl;
 	}
 	else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
 		if (uParam > knots[order - 1]){
 			uParam -= 0.05;
+			if (uParam < 0.f){
+				uParam = 0.f;
+			}
 		}
 		else {
 			cout << "Lowest u value reached." << endl;
 		}
-		cout << uParam << endl;
+		//cout << uParam << endl;
 	}
 	if (key == GLFW_KEY_ENTER && action == GLFW_PRESS){
 			cout << "Order: " << order << endl;
-			cout << "Number of Points: " << controls.size() << endl;
+			cout << "Number of Points: " << controls.size() - 1 << endl;
 			cout << "u Value: " << uParam << endl;
 	}
 }
@@ -200,7 +212,7 @@ void mouseClick (GLFWwindow *sender, int button, int action, int mods) {
 	selected = -1;
 	canMove = false;
 	if (action == GLFW_PRESS){
-		for (int i = 0; i < controls.size(); i++){
+		for (int i = 0; i < controls.size() - 1; i++){
 			if ((abs(controls[i].x - mouseX) <= cRadius) && (abs(controls[i].y - mouseY) <= cRadius)){
 				selected = i;
 			}
@@ -208,7 +220,7 @@ void mouseClick (GLFWwindow *sender, int button, int action, int mods) {
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (selected == -1){
 				controls.push_back(vec2(mouseX, mouseY));
-				cout << "New control point: " << controls.size() - 1 << endl;
+				cout << "New control point: " << controls.size() - 1 - 1 << endl;
 			}
 			else{
 				cout << "Selected control point: " << selected << endl;
@@ -216,7 +228,7 @@ void mouseClick (GLFWwindow *sender, int button, int action, int mods) {
 			canMove = true;
 		}
 		if (button == GLFW_MOUSE_BUTTON_RIGHT){
-			int ptsCheck = controls.size() - 1;
+			int ptsCheck = controls.size() - 1 - 1;
 			int ordCheck = order - 2;
 			if ((ptsCheck > ordCheck) && (ptsCheck > 0)){
 				if (selected != -1){
@@ -261,7 +273,7 @@ int main() {
 	glfwSetMouseButtonCallback (window, mouseClick);
 	glfwSetCursorPosCallback (window, mousePos);
 	while (!glfwWindowShouldClose (window)) {
-		controls.pop_back();
+		controls.pop_back();	// pop the null point so it does not affect the caluclations
 		glfwGetFramebufferSize (window, &w, &h);
 		glViewport (0, 0, w, h);
 
@@ -269,7 +281,7 @@ int main() {
 
 		glfwSwapBuffers (window);
 		glfwPollEvents();
-		controls.push_back(controls[controls.size() - 1]);
+		controls.push_back(controls[controls.size() - 1 - 1]);	// push the null point
 	}
 
 	glfwDestroyWindow (window);
