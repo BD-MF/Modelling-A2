@@ -15,7 +15,7 @@ GLFWwindow *window;
 int w, h;
 double mouseX, mouseY;
 
-vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f)};
+vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.25f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f), vec2(0.5f, 0.2f)};
 float cRadius = 0.01f;
 int selected = -1;
 
@@ -32,16 +32,24 @@ vec2 findPosAt(float u){
 			delta = i;
 			break;
 		}
+		else if (u >= 1.f){
+			delta = controls.size();
+			u = 1.f;
+		}
+		else if (u < 0.f){
+			delta = order;
+			u = 0.f;
+		}
 	}
 	assert(delta != -1);
 
 	//efficient algorithm follows:
 	for (int i = 0; i < order; i++){
-		output.push_back(controls[delta - i]);	
+		output.push_back(controls[delta - i]);
 	}
 	for (int r = order; r >= 2; r--){
 		int i = delta;
-		for (int s = 0; s <= r - 2; s++){
+		for (int s = 0; s <= r-2; s++){
 			float omega = (u - knots[i]) / (knots[i+r-1] - knots[i]);
 			output[s] = (omega * output[s]) + ((1 - omega) * output[s+1]);
 			i--;
@@ -71,6 +79,7 @@ void render () {
 	//Draws the points as little circles
 	for (int i = 0; i < controls.size(); i++){
 		glBegin (GL_TRIANGLE_STRIP); //GL_LINE_STRIP, GL_POINTS, GL_QUADS, etc...
+			glColor3f(1.f, 1.f, 1.f);
 			for (float t = 0.f; t < 2*PI; t += 0.01f){
 				vec2 circle = vec2(cRadius*cos(t), cRadius*sin(t));
 				glVertex2f(controls[i].x + circle.x, controls[i].y + circle.y);
@@ -80,11 +89,33 @@ void render () {
 	}
 
 	glBegin (GL_LINE_STRIP);
-	for(float u = knots[order-1]; u < uParam; u += (0.001)){
+	glColor3f(1.f, 1.f, 1.f);
+	for(float u = knots[order - 1]; u <= knots[controls.size() + 1]; u += (0.001)){
 		vec2 posVec = findPosAt(u);
 		glVertex2f(posVec.x, posVec.y);
 	}
 	glEnd();
+
+	glBegin (GL_LINES);
+	vec2 uPos = findPosAt(uParam);
+	glColor3f(1.f, 0.f, 0.f);
+	glVertex2f(uPos.x - cRadius, uPos.y + cRadius);
+	glVertex2f(uPos.x + cRadius, uPos.y - cRadius);
+	glVertex2f(uPos.x + cRadius, uPos.y + cRadius);
+	glVertex2f(uPos.x - cRadius, uPos.y - cRadius);
+	glEnd();
+
+	for (int i = 0; i < knots.size(); i++){
+		glBegin (GL_TRIANGLE_STRIP); //GL_LINE_STRIP, GL_POINTS, GL_QUADS, etc...
+			glColor3f(1.f, 0.f, 0.f);
+			for (float t = 0.f; t < 2*PI; t += 0.01f){
+				vec2 circle = vec2(cRadius*cos(t), cRadius*sin(t));
+				vec2 knotPos = findPosAt(knots[i]);
+				glVertex2f(knotPos.x + circle.x, knotPos.y + circle.y);
+				glVertex2f(knotPos.x, knotPos.y);
+			}
+		glEnd ();
+	}
 }
 
 void buildKnots(){
@@ -106,12 +137,11 @@ void buildKnots(){
 		knots.erase(knots.begin() + (numPoints + 1));
 	}
 
-	/* prints out the knot values
+	//prints out the knot values
 	for (int iter = 0; iter < knots.size(); iter++){
 		cout << knots[iter] << " ";
 	}
 	cout << endl;
-	*/
 }
 
 void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) {
@@ -129,31 +159,33 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 		}
 	}
 	else if (key == GLFW_KEY_DOWN && action == GLFW_PRESS){
-		if (order > 1){
+		if (order > 2){
 			order--;
 			knots.erase(knots.begin());
 			knots.pop_back();
 			buildKnots();
 		}
 		else {
-			cout << "The order of the curve must be bigger than 0." << endl;
+			cout << "The order of the curve must be bigger than 1." << endl;
 		}
 	}
-	if (key == GLFW_KEY_RIGHT){
+	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
 		if (uParam < knots[controls.size() + 1]){
 			uParam += 0.05;
 		}
 		else {
 			cout << "Highest u value reached." << endl;
 		}
+		cout << uParam << endl;
 	}
-	else if (key == GLFW_KEY_LEFT){
+	else if (key == GLFW_KEY_LEFT && action == GLFW_PRESS){
 		if (uParam > knots[order - 1]){
 			uParam -= 0.05;
 		}
 		else {
 			cout << "Lowest u value reached." << endl;
 		}
+		cout << uParam << endl;
 	}
 	if (key == GLFW_KEY_ENTER && action == GLFW_PRESS){
 			cout << "Order: " << order << endl;
@@ -229,6 +261,7 @@ int main() {
 	glfwSetMouseButtonCallback (window, mouseClick);
 	glfwSetCursorPosCallback (window, mousePos);
 	while (!glfwWindowShouldClose (window)) {
+		controls.pop_back();
 		glfwGetFramebufferSize (window, &w, &h);
 		glViewport (0, 0, w, h);
 
@@ -236,6 +269,7 @@ int main() {
 
 		glfwSwapBuffers (window);
 		glfwPollEvents();
+		controls.push_back(controls[controls.size() - 1]);
 	}
 
 	glfwDestroyWindow (window);
