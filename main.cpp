@@ -28,7 +28,7 @@ vec2 findPosAt(float u){
 	vector<vec2> output;
 	//find the delta value
 	int delta = -1;
-	for (int i = 0; i < (controls.size() - 1 + order); i++){
+	for (int i = 0; i < (controls.size() + order); i++){
 		if (u >= 1.f){
 			delta = controls.size();
 			u = 1.f;
@@ -48,7 +48,11 @@ vec2 findPosAt(float u){
 
 	//efficient algorithm follows:
 	for (int i = 1; i <= order; i++){
-		output.push_back(controls[delta - i]);
+		int index = delta - i;
+		if (index < 0){
+			index = 0;
+		}
+		output.push_back(controls[index]);
 	}
 	for (int r = order; r >= 2; r--){
 		int i = delta;
@@ -262,7 +266,7 @@ int main() {
 	if (!glfwInit())
 		return 1;
 
-	window = glfwCreateWindow (640, 640, "My Window", NULL, NULL);
+	window = glfwCreateWindow (1000, 1000, "My Window", NULL, NULL);
 	if (!window)
 		return 1;
 
