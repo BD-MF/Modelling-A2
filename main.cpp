@@ -15,7 +15,8 @@ GLFWwindow *window;
 int w, h;
 double mouseX, mouseY;
 
-vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.25f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f), vec2(0.5f, 0.2f)};
+vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.25f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f)};
+						//vec2(0.5f, 0.2f)};
 float cRadius = 0.01f;
 int selected = -1;
 
@@ -27,24 +28,26 @@ vec2 findPosAt(float u){
 	vector<vec2> output;
 	//find the delta value
 	int delta = -1;
-	for (int i = 0; i < (controls.size() + order); i++){
-		if ((u >= knots[i]) && (u < knots[i+1])){
-			delta = i;
-			break;
-		}
-		else if (u >= 1.f){
+	for (int i = 0; i < (controls.size() - 1 + order); i++){
+		if (u >= 1.f){
 			delta = controls.size();
 			u = 1.f;
+			break;
 		}
 		else if (u < 0.f){
 			delta = order;
 			u = 0.f;
+			break;
+		}
+		else if ((u >= knots[i]) && (u < knots[i+1])){
+			delta = i;
+			break;
 		}
 	}
 	assert(delta != -1);
 
 	//efficient algorithm follows:
-	for (int i = 0; i < order; i++){
+	for (int i = 1; i <= order; i++){
 		output.push_back(controls[delta - i]);
 	}
 	for (int r = order; r >= 2; r--){
@@ -90,7 +93,7 @@ void render () {
 
 	glBegin (GL_LINE_STRIP);
 	glColor3f(1.f, 1.f, 1.f);
-	for(float u = knots[order - 1]; u <= knots[controls.size() + 1]; u += (0.001)){
+	for(float u = knots[order - 1]; u < knots[controls.size() + 1]; u += (0.001)){
 		vec2 posVec = findPosAt(u);
 		glVertex2f(posVec.x, posVec.y);
 	}
@@ -268,7 +271,7 @@ int main() {
 	glfwSetMouseButtonCallback (window, mouseClick);
 	glfwSetCursorPosCallback (window, mousePos);
 	while (!glfwWindowShouldClose (window)) {
-		controls.pop_back();
+		//controls.pop_back();
 		glfwGetFramebufferSize (window, &w, &h);
 		glViewport (0, 0, w, h);
 
@@ -276,7 +279,7 @@ int main() {
 
 		glfwSwapBuffers (window);
 		glfwPollEvents();
-		controls.push_back(controls[controls.size() - 1]);
+		//controls.push_back(controls[controls.size() - 1]);
 	}
 
 	glfwDestroyWindow (window);
