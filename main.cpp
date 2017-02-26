@@ -185,8 +185,10 @@ void buildKnots(){
 }
 
 void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) {
+	//close the window
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
+	//change the value of order, or 'k'
 	if (key == GLFW_KEY_UP && action == GLFW_PRESS){
 		//check that the new order is not out of bounds
 		if (order + 1 <= controls.size() - 1){
@@ -213,6 +215,7 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 			cout << "The order of the curve must be bigger than 1." << endl;
 		}
 	}
+	//move the value of uParam
 	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
 		//check that the u parameter is not out of bounds
 		if (uParam < knots[controls.size()]){
