@@ -15,12 +15,12 @@ GLFWwindow *window;
 int w, h;
 double mouseX, mouseY;
 
-vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.25f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f),
-						vec2(0.f, 0.f)}; //null point to fix the curve-tail bug
+vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.25f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f), vec2(0.5f, 0.f)};
+						//vec2(0.f, 0.f)}; //null point to fix the curve-tail bug
 float cRadius = 0.01f;
 int selected = -1;
 
-vector<float> knots = {0.f, 0.f, 0.f, 0.25f, 0.5f, 0.75f, 1.f, 1.f, 1.f};
+vector<float> knots = {0.f, 0.f, 0.f, 1.f/3.f, 2.f/3.f, 1.f, 1.f, 1.f};
 int order = 3;
 float uParam = 0.f;
 
@@ -35,7 +35,7 @@ vec2 findPosAt(float u){
 	int delta = -1;
 	for (int i = 0; i < (controls.size() - 1 + order); i++){
 		if (u >= 1.f){
-			delta = controls.size() - 1;
+			delta = controls.size() - 2;
 			u = 1.f;
 		}
 		else if (u < 0.f){
@@ -94,9 +94,19 @@ void render () {
 		glEnd ();
 	}
 
+	glBegin (GL_TRIANGLE_STRIP); //GL_LINE_STRIP, GL_POINTS, GL_QUADS, etc...
+		glColor3f(0.f, 0.f, 1.f);
+		for (float t = 0.f; t < 2*PI; t += 0.01f){
+			int index = controls.size() - 1;
+			vec2 circle = vec2(cRadius*cos(t), cRadius*sin(t));
+			glVertex2f(controls[index].x + circle.x, controls[index].y + circle.y);
+			glVertex2f(controls[index].x, controls[index].y);
+		}
+	glEnd ();
+
 	glBegin (GL_LINE_STRIP);
 	glColor3f(1.f, 1.f, 1.f);
-	for(float u = knots[order - 1]; u <= knots[controls.size()]; u += (0.001)){
+	for(float u = knots[order - 1]; u <= knots[controls.size() + 1]; u += (0.001)){
 		vec2 posVec = findPosAt(u);
 		glVertex2f(posVec.x, posVec.y);
 	}
@@ -105,10 +115,10 @@ void render () {
 	glBegin (GL_LINES);
 	vec2 uPos = findPosAt(uParam);
 	glColor3f(1.f, 0.f, 0.f);
-	glVertex2f(uPos.x - cRadius, uPos.y + cRadius);
-	glVertex2f(uPos.x + cRadius, uPos.y - cRadius);
-	glVertex2f(uPos.x + cRadius, uPos.y + cRadius);
-	glVertex2f(uPos.x - cRadius, uPos.y - cRadius);
+	glVertex2f(uPos.x - 2*cRadius, uPos.y + 2*cRadius);
+	glVertex2f(uPos.x + 2*cRadius, uPos.y - 2*cRadius);
+	glVertex2f(uPos.x + 2*cRadius, uPos.y + 2*cRadius);
+	glVertex2f(uPos.x - 2*cRadius, uPos.y - 2*cRadius);
 	glEnd();
 
 	for (int i = 0; i < knots.size(); i++){
@@ -154,7 +164,7 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 	if (key == GLFW_KEY_UP && action == GLFW_PRESS){
-		if (controls.size() - 1 > (order - 2) + 1){
+		if (order + 1 <= controls.size() - 1){
 			order++;
 			knots.insert(knots.begin(), 0.f);
 			knots.push_back(1.f);
@@ -176,7 +186,7 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 		}
 	}
 	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS){
-		if (uParam < knots[controls.size() - 1 + 1]){
+		if (uParam < knots[controls.size()]){
 			uParam += 0.05;
 			if (uParam > 1.f){
 				uParam = 1.f;
@@ -212,7 +222,7 @@ void mouseClick (GLFWwindow *sender, int button, int action, int mods) {
 	selected = -1;
 	canMove = false;
 	if (action == GLFW_PRESS){
-		for (int i = 0; i < controls.size() - 1; i++){
+		for (int i = 0; i < controls.size(); i++){
 			if ((abs(controls[i].x - mouseX) <= cRadius) && (abs(controls[i].y - mouseY) <= cRadius)){
 				selected = i;
 			}
@@ -220,15 +230,20 @@ void mouseClick (GLFWwindow *sender, int button, int action, int mods) {
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (selected == -1){
 				controls.push_back(vec2(mouseX, mouseY));
-				cout << "New control point: " << controls.size() - 1 - 1 << endl;
+				cout << "New control point: " << controls.size() - 1 << endl;
 			}
 			else{
-				cout << "Selected control point: " << selected << endl;
+				if (selected == controls.size() - 1){
+					cout << "Selected control point: Next Point to be Added" << endl;
+				}
+				else {
+					cout << "Selected control point: " << selected + 1 << endl;
+				}
 			}
 			canMove = true;
 		}
 		if (button == GLFW_MOUSE_BUTTON_RIGHT){
-			int ptsCheck = controls.size() - 1 - 1;
+			int ptsCheck = controls.size() - 3;
 			int ordCheck = order - 2;
 			if ((ptsCheck > ordCheck) && (ptsCheck > 0)){
 				if (selected != -1){
@@ -273,7 +288,7 @@ int main() {
 	glfwSetMouseButtonCallback (window, mouseClick);
 	glfwSetCursorPosCallback (window, mousePos);
 	while (!glfwWindowShouldClose (window)) {
-		controls.pop_back();	// pop the null point so it does not affect the caluclations
+		//controls.pop_back();	// pop the null point so it does not affect the caluclations
 		glfwGetFramebufferSize (window, &w, &h);
 		glViewport (0, 0, w, h);
 
@@ -281,7 +296,7 @@ int main() {
 
 		glfwSwapBuffers (window);
 		glfwPollEvents();
-		controls.push_back(controls[controls.size() - 1 - 1]);	// push the null point
+		//controls.push_back(controls[controls.size() - 1 - 1]);	// push the null point
 	}
 
 	glfwDestroyWindow (window);
