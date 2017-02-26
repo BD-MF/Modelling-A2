@@ -1,4 +1,4 @@
-EXEFILE = myprogram
+EXEFILE = questionmark
 LIBS = -lglfw -lGL -lGLU
 
 

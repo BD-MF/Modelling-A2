@@ -47,10 +47,10 @@ vec2 findPosAt(float u){
 	assert(delta != -1);
 
 	//efficient algorithm follows:
-	for (int i = 1; i <= order; i++){
+	for (int i = 0; i < order; i++){
 		int index = delta - i;
-		if (index < 0){
-			index = 0;
+		if (index >= controls.size()){
+			index = controls.size() - 1;
 		}
 		output.push_back(controls[index]);
 	}
@@ -156,7 +156,7 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GL_TRUE);
 	if (key == GLFW_KEY_UP && action == GLFW_PRESS){
-		if (controls.size() > (order - 2) + 1){
+		if (order + 1 <= controls.size() + 1){
 			order++;
 			knots.insert(knots.begin(), 0.f);
 			knots.push_back(1.f);
@@ -275,7 +275,6 @@ int main() {
 	glfwSetMouseButtonCallback (window, mouseClick);
 	glfwSetCursorPosCallback (window, mousePos);
 	while (!glfwWindowShouldClose (window)) {
-		//controls.pop_back();
 		glfwGetFramebufferSize (window, &w, &h);
 		glViewport (0, 0, w, h);
 
@@ -283,7 +282,6 @@ int main() {
 
 		glfwSwapBuffers (window);
 		glfwPollEvents();
-		//controls.push_back(controls[controls.size() - 1]);
 	}
 
 	glfwDestroyWindow (window);
