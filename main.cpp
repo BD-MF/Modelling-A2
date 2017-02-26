@@ -15,6 +15,8 @@ GLFWwindow *window;
 int w, h;
 double mouseX, mouseY;
 
+vector<vec2> cLines;	// output of first loop in b-spline efficient algorithm. Used for printing out construction lines
+
 vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.25f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f), vec2(0.5f, 0.f)};
 float cRadius = 0.01f;
 int selected = -1;
@@ -23,10 +25,7 @@ vector<float> knots = {0.f, 0.f, 0.f, 1.f/3.f, 2.f/3.f, 1.f, 1.f, 1.f};
 int order = 3;
 float uParam = 0.f;
 
-vec2 findPosAt(float u){
-	vector<vec2> output;
-
-	//find the delta value
+int getDelta(float u){
 	int delta = -1;
 	for (int i = 0; i < (controls.size() - 1 + order); i++){
 		if (u >= 1.f){
@@ -43,6 +42,14 @@ vec2 findPosAt(float u){
 		}
 	}
 	assert(delta != -1);
+	return delta;
+}
+
+vec2 findPosAt(float u){
+	vector<vec2> output;
+
+	//find the delta value
+	int delta = getDelta(u);
 
 	//efficient algorithm follows:
 	for (int i = 0; i <= order - 1; i++){
@@ -120,6 +127,28 @@ void render () {
 	glVertex2f(uPos.x + 2*cRadius, uPos.y + 2*cRadius);
 	glVertex2f(uPos.x - 2*cRadius, uPos.y - 2*cRadius);
 	glEnd();
+
+	// draws the construction lines for uParam
+	cLines.clear();
+	int delta = getDelta(uParam);
+	for (int i = 0; i <= order - 1; i++){
+		cLines.push_back(controls[delta - i]);
+	}
+	for (int r = order; r >= 2; r--){
+		int i = delta;
+		for (int s = 0; s <= r-2; s++){
+			float omega = (uParam - knots[i]) / (knots[i+r-1] - knots[i]);
+
+			glBegin(GL_LINE_STRIP);
+			glColor3f(0.f, 0.f, 1.f);
+			glVertex2f(cLines[s].x, cLines[s].y);
+			glVertex2f(cLines[s+1].x, cLines[s+1].y);
+			glEnd();
+
+			cLines[s] = (omega * cLines[s]) + ((1 - omega) * cLines[s+1]);
+			i--;
+		}
+	}
 }
 
 void buildKnots(){
