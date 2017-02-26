@@ -16,6 +16,8 @@ int w, h;
 double mouseX, mouseY;
 
 vector<vec2> cLines;	// output of first loop in b-spline efficient algorithm. Used for printing out construction lines
+bool showConstruction = true;
+bool showPoints = true;
 
 vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.25f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f), vec2(0.5f, 0.f)};
 float cRadius = 0.01f;
@@ -84,31 +86,6 @@ void render () {
 	//gluPerspective (fov, aspect ratio, near plane, far plane)
 	//glFrustum
 
-	//Draws the control points as little white circles
-	for (int i = 0; i < controls.size() - 1; i++){
-		glBegin (GL_TRIANGLE_STRIP); //GL_LINE_STRIP, GL_POINTS, GL_QUADS, etc...
-			glColor3f(1.f, 1.f, 1.f);
-			for (float t = 0.f; t < 2*PI; t += 0.01f){
-				vec2 circle = vec2(cRadius*cos(t), cRadius*sin(t));
-				glVertex2f(controls[i].x + circle.x, controls[i].y + circle.y);
-				glVertex2f(controls[i].x, controls[i].y);
-			}
-		glEnd ();
-	}
-
-	// Draws the knots as little red circles
-	for (int i = 0; i < knots.size(); i++){
-	glBegin (GL_TRIANGLE_STRIP); //GL_LINE_STRIP, GL_POINTS, GL_QUADS, etc...
-		glColor3f(1.f, 0.f, 0.f);
-		for (float t = 0.f; t < 2*PI; t += 0.01f){
-			vec2 circle = vec2(cRadius*cos(t), cRadius*sin(t));
-			vec2 knotPos = findPosAt(knots[i]);
-			glVertex2f(knotPos.x + circle.x, knotPos.y + circle.y);
-			glVertex2f(knotPos.x, knotPos.y);
-		}
-	glEnd();
-	}
-
 	// draws the whole curve
 	glBegin (GL_LINE_STRIP);
 	glColor3f(1.f, 1.f, 1.f);
@@ -118,35 +95,64 @@ void render () {
 	}
 	glEnd();
 
-	// draws the current position of the user's 'u' position as a red X.
-	glBegin (GL_LINES);
-	vec2 uPos = findPosAt(uParam);
-	glColor3f(1.f, 0.f, 0.f);
-	glVertex2f(uPos.x - 2*cRadius, uPos.y + 2*cRadius);
-	glVertex2f(uPos.x + 2*cRadius, uPos.y - 2*cRadius);
-	glVertex2f(uPos.x + 2*cRadius, uPos.y + 2*cRadius);
-	glVertex2f(uPos.x - 2*cRadius, uPos.y - 2*cRadius);
-	glEnd();
+	if(showPoints){
+		//Draws the control points as little white circles
+		for (int i = 0; i < controls.size() - 1; i++){
+			glBegin (GL_TRIANGLE_STRIP); //GL_LINE_STRIP, GL_POINTS, GL_QUADS, etc...
+				glColor3f(1.f, 1.f, 1.f);
+				for (float t = 0.f; t < 2*PI; t += 0.01f){
+					vec2 circle = vec2(cRadius*cos(t), cRadius*sin(t));
+					glVertex2f(controls[i].x + circle.x, controls[i].y + circle.y);
+					glVertex2f(controls[i].x, controls[i].y);
+				}
+			glEnd ();
+		}
 
-	// draws the construction lines for uParam
-	cLines.clear();
-	int delta = getDelta(uParam);
-	for (int i = 0; i <= order - 1; i++){
-		cLines.push_back(controls[delta - i]);
+		// Draws the knots as little red circles
+		for (int i = 0; i < knots.size(); i++){
+		glBegin (GL_TRIANGLE_STRIP); //GL_LINE_STRIP, GL_POINTS, GL_QUADS, etc...
+			glColor3f(1.f, 0.f, 0.f);
+			for (float t = 0.f; t < 2*PI; t += 0.01f){
+				vec2 circle = vec2(cRadius*cos(t), cRadius*sin(t));
+				vec2 knotPos = findPosAt(knots[i]);
+				glVertex2f(knotPos.x + circle.x, knotPos.y + circle.y);
+				glVertex2f(knotPos.x, knotPos.y);
+			}
+		glEnd();
+		}
 	}
-	for (int r = order; r >= 2; r--){
-		int i = delta;
-		for (int s = 0; s <= r-2; s++){
-			float omega = (uParam - knots[i]) / (knots[i+r-1] - knots[i]);
 
-			glBegin(GL_LINE_STRIP);
-			glColor3f(0.f, 0.f, 1.f);
-			glVertex2f(cLines[s].x, cLines[s].y);
-			glVertex2f(cLines[s+1].x, cLines[s+1].y);
-			glEnd();
+	if(showConstruction){
+		// draws the current position of the user's 'u' position as a red X.
+		glBegin (GL_LINES);
+		vec2 uPos = findPosAt(uParam);
+		glColor3f(1.f, 0.f, 0.f);
+		glVertex2f(uPos.x - 2*cRadius, uPos.y + 2*cRadius);
+		glVertex2f(uPos.x + 2*cRadius, uPos.y - 2*cRadius);
+		glVertex2f(uPos.x + 2*cRadius, uPos.y + 2*cRadius);
+		glVertex2f(uPos.x - 2*cRadius, uPos.y - 2*cRadius);
+		glEnd();
 
-			cLines[s] = (omega * cLines[s]) + ((1 - omega) * cLines[s+1]);
-			i--;
+		// draws the construction lines for uParam
+		cLines.clear();
+		int delta = getDelta(uParam);
+		for (int i = 0; i <= order - 1; i++){
+			cLines.push_back(controls[delta - i]);
+		}
+		for (int r = order; r >= 2; r--){
+			int i = delta;
+			for (int s = 0; s <= r-2; s++){
+				float omega = (uParam - knots[i]) / (knots[i+r-1] - knots[i]);
+
+				glBegin(GL_LINE_STRIP);
+				glColor3f(0.f, 1.f, 0.f);
+				glVertex2f(cLines[s].x, cLines[s].y);
+				glVertex2f(cLines[s+1].x, cLines[s+1].y);
+				glEnd();
+
+				cLines[s] = (omega * cLines[s]) + ((1 - omega) * cLines[s+1]);
+				i--;
+			}
 		}
 	}
 }
@@ -241,6 +247,13 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 			cout << "Number of Points: " << controls.size() - 1 << endl;
 			cout << "u Value: " << uParam << endl;
 	}
+	//construction modifier
+	if (key == GLFW_KEY_LEFT_SHIFT && action == GLFW_PRESS){
+		showPoints = !showPoints;
+	}
+	else if (key == GLFW_KEY_SPACE && action == GLFW_PRESS){
+		showConstruction = !showConstruction;
+	}
 }
 
 bool canMove = false;
@@ -313,7 +326,7 @@ int main() {
 	if (!glfwInit())
 		return 1;
 
-	window = glfwCreateWindow (640, 640, "My Window", NULL, NULL);
+	window = glfwCreateWindow (1000, 1000, "My Window", NULL, NULL);
 	if (!window)
 		return 1;
 
