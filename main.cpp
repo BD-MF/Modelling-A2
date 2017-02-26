@@ -16,7 +16,6 @@ int w, h;
 double mouseX, mouseY;
 
 vector<vec2> controls = {vec2(-0.5f, -0.25f), vec2(0.f, -0.25f), vec2(0.25f, 0.f), vec2(0.f, 0.25f), vec2(0.5f, 0.25f), vec2(0.5f, 0.f)};
-						//vec2(0.f, 0.f)}; //null point to fix the curve-tail bug
 float cRadius = 0.01f;
 int selected = -1;
 
@@ -153,11 +152,12 @@ void buildKnots(){
 		knots.erase(knots.begin() + (numPoints + 1));
 	}
 
-	//prints out the knot values
+	/*prints out the knot values
 	for (int iter = 0; iter < knots.size(); iter++){
 		cout << knots[iter] << " ";
 	}
 	cout << endl;
+	*/
 }
 
 void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) {
@@ -211,7 +211,7 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 	}
 	if (key == GLFW_KEY_ENTER && action == GLFW_PRESS){
 			cout << "Order: " << order << endl;
-			cout << "Number of Points: " << controls.size() - 1 << endl;
+			cout << "Number of Points: " << controls.size() - 1 << " (Value of N: " << controls.size() - 2 << ")" << endl;
 			cout << "u Value: " << uParam << endl;
 	}
 }
@@ -288,7 +288,6 @@ int main() {
 	glfwSetMouseButtonCallback (window, mouseClick);
 	glfwSetCursorPosCallback (window, mousePos);
 	while (!glfwWindowShouldClose (window)) {
-		//controls.pop_back();	// pop the null point so it does not affect the caluclations
 		glfwGetFramebufferSize (window, &w, &h);
 		glViewport (0, 0, w, h);
 
@@ -296,7 +295,6 @@ int main() {
 
 		glfwSwapBuffers (window);
 		glfwPollEvents();
-		//controls.push_back(controls[controls.size() - 1 - 1]);	// push the null point
 	}
 
 	glfwDestroyWindow (window);
