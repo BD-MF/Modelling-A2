@@ -93,16 +93,6 @@ void render () {
 		glEnd ();
 	}
 
-	glBegin (GL_TRIANGLE_STRIP); //GL_LINE_STRIP, GL_POINTS, GL_QUADS, etc...
-		glColor3f(0.f, 0.f, 1.f);
-		for (float t = 0.f; t < 2*PI; t += 0.01f){
-			int index = controls.size() - 1;
-			vec2 circle = vec2(cRadius*cos(t), cRadius*sin(t));
-			glVertex2f(controls[index].x + circle.x, controls[index].y + circle.y);
-			glVertex2f(controls[index].x, controls[index].y);
-		}
-	glEnd ();
-
 	glBegin (GL_LINE_STRIP);
 	glColor3f(1.f, 1.f, 1.f);
 	for(float u = knots[order - 1]; u <= knots[controls.size() + 1]; u += (0.001)){
@@ -211,7 +201,7 @@ void keyboard (GLFWwindow *sender, int key, int scancode, int action, int mods) 
 	}
 	if (key == GLFW_KEY_ENTER && action == GLFW_PRESS){
 			cout << "Order: " << order << endl;
-			cout << "Number of Points: " << controls.size() - 1 << " (Value of N: " << controls.size() - 2 << ")" << endl;
+			cout << "Number of Points: " << controls.size() - 1 << endl;
 			cout << "u Value: " << uParam << endl;
 	}
 }
@@ -222,23 +212,18 @@ void mouseClick (GLFWwindow *sender, int button, int action, int mods) {
 	selected = -1;
 	canMove = false;
 	if (action == GLFW_PRESS){
-		for (int i = 0; i < controls.size(); i++){
+		for (int i = 0; i < controls.size() - 1; i++){
 			if ((abs(controls[i].x - mouseX) <= cRadius) && (abs(controls[i].y - mouseY) <= cRadius)){
 				selected = i;
 			}
 		}
 		if (button == GLFW_MOUSE_BUTTON_LEFT) {
 			if (selected == -1){
-				controls.push_back(vec2(mouseX, mouseY));
+				controls.insert(controls.begin() + controls.size() - 1, vec2(mouseX, mouseY));
 				cout << "New control point: " << controls.size() - 1 << endl;
 			}
 			else{
-				if (selected == controls.size() - 1){
-					cout << "Selected control point: Next Point to be Added" << endl;
-				}
-				else {
 					cout << "Selected control point: " << selected + 1 << endl;
-				}
 			}
 			canMove = true;
 		}
